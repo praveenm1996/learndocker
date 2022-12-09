@@ -1,0 +1,61 @@
+# Docker
+# Build a Docker image
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- main
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+    - task: Docker@2
+      displayName: Build an image
+      inputs:
+        command: build
+        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+        tags: |
+          $(tag)
+    - task: DockerCompose@0
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'Azure Pass - Sponsorship (aefe4c0a-aef5-4602-95b8-f801f6c7d3cd)'
+        azureContainerRegistry: '{"loginServer":"learndockercon.azurecr.io", "id" : "/subscriptions/aefe4c0a-aef5-4602-95b8-f801f6c7d3cd/resourceGroups/learndocker/providers/Microsoft.ContainerRegistry/registries/learndockercon"}'
+        dockerComposeFile: '**/docker-compose.yml'
+        action: 'Run services'
+    - task: DockerCompose@0
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'Azure Pass - Sponsorship (aefe4c0a-aef5-4602-95b8-f801f6c7d3cd)'
+        azureContainerRegistry: 'learndockercon.azurecr.io'
+        dockerComposeFile: '**/docker-compose.yml'
+        action: 'Build services'
+
+    - task: DockerCompose@0
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'Azure Pass - Sponsorship (aefe4c0a-aef5-4602-95b8-f801f6c7d3cd)'
+        azureContainerRegistry: 'learndockercon.azurecr.io'
+        dockerComposeFile: '**/docker-compose.yml'
+        action: 'Push services'
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: './'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
