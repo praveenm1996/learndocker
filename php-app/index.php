@@ -1,5 +1,5 @@
 <?php  
-    echo "Hello, Meena CA"; 
+    echo "Hello, praveen CA"; 
 
 $mysqli = new mysqli("db","root","example","company1");
 $sql = "INSERT INTO users1 (name, emailid) VALUES('userer1 ','userer1@Google.com')";
